@@ -1,0 +1,9 @@
+# Sensitive Keys
+backend/.env
+
+# Python Virtual Environment
+backend/venv/
+__pycache__/
+
+# Mac System Files
+.DS_Store
