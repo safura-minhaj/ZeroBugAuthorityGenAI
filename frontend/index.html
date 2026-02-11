@@ -125,22 +125,29 @@
             </div>
         </div>
 
-        <div id="contentRewrite" class="hidden grid-cols-1 lg:grid-cols-2 gap-10">
-            <div class="bg-gray-800 rounded-[2rem] p-8 shadow-2xl">
-                <h3 class="text-2xl font-black mb-6 text-red-400 italic">ORIGINAL</h3>
-                <div id="originalCode" class="bg-gray-950 rounded-2xl p-6 h-[600px] overflow-auto text-xs font-mono border border-white/5"></div>
+        <div id="contentRewrite" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-10">
+    
+    <div class="bg-gray-800 rounded-[2rem] p-8 shadow-2xl border border-white/5 flex flex-col h-[700px]">
+        <h3 class="text-2xl font-black mb-6 text-red-400 italic uppercase flex items-center">
+            <i class="fas fa-history mr-3"></i> Original Source
+        </h3>
+        <div id="originalCode" class="flex-grow bg-gray-950 rounded-2xl p-6 overflow-auto text-xs font-mono border border-white/5 leading-relaxed">
             </div>
-            
-            <div class="bg-gray-800 rounded-[2rem] p-8 shadow-2xl">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-2xl font-black text-green-400 italic">OPTIMIZED</h3>
-                    <button onclick="mockGithubPR()" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-black text-xs flex items-center shadow-lg shadow-indigo-500/20">
-                        <i class="fab fa-github mr-2"></i> CREATE PR
-                    </button>
-                </div>
-                <div id="rewrittenCode" class="bg-gray-950 rounded-2xl p-6 h-[600px] overflow-auto text-xs font-mono border border-white/5"></div>
-            </div>
+    </div>
+    
+    <div class="bg-gray-800 rounded-[2rem] p-8 shadow-2xl border border-white/5 flex flex-col h-[700px]">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-black text-green-400 italic uppercase flex items-center">
+                <i class="fas fa-magic mr-3"></i> AI Optimized
+            </h3>
+            <button onclick="mockGithubPR()" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-black text-xs flex items-center shadow-lg shadow-indigo-500/20 transition-all transform active:scale-95">
+                <i class="fab fa-github mr-2"></i> CREATE PR
+            </button>
         </div>
+        <div id="rewrittenCode" class="flex-grow bg-gray-950 rounded-2xl p-6 overflow-auto text-xs font-mono border border-white/5 leading-relaxed">
+            </div>
+    </div>
+</div>
     </div>
 
     <div id="prPopup" class="fixed bottom-12 right-12 bg-gray-800 border-l-8 border-indigo-500 p-8 rounded-2xl shadow-2xl translate-y-60 transition-transform duration-500 z-50 flex items-center space-x-6">
