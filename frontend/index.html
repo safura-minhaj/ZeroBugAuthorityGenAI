@@ -127,27 +127,35 @@
 
         <div id="contentRewrite" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-10">
     
-    <div class="bg-gray-800 rounded-[2rem] p-8 shadow-2xl border border-white/5 flex flex-col h-[700px]">
-        <h3 class="text-2xl font-black mb-6 text-red-400 italic uppercase flex items-center">
-            <i class="fas fa-history mr-3"></i> Original Source
-        </h3>
-        <div id="originalCode" class="flex-grow bg-gray-950 rounded-2xl p-6 overflow-auto text-xs font-mono border border-white/5 leading-relaxed">
+            <div class="bg-gray-800 rounded-[2rem] p-8 shadow-2xl border border-white/5 flex flex-col h-[700px]">
+                <h3 class="text-2xl font-black mb-6 text-red-400 italic uppercase flex items-center">
+                    <i class="fas fa-history mr-3"></i> Original Source
+                </h3>
+                <div id="originalCode" class="flex-grow bg-gray-950 rounded-2xl p-6 overflow-auto text-xs font-mono border border-white/5 leading-relaxed">
+                </div>
             </div>
-    </div>
-    
-    <div class="bg-gray-800 rounded-[2rem] p-8 shadow-2xl border border-white/5 flex flex-col h-[700px]">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-2xl font-black text-green-400 italic uppercase flex items-center">
-                <i class="fas fa-magic mr-3"></i> AI Optimized
-            </h3>
-            <button onclick="mockGithubPR()" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-black text-xs flex items-center shadow-lg shadow-indigo-500/20 transition-all transform active:scale-95">
-                <i class="fab fa-github mr-2"></i> CREATE PR
-            </button>
+            
+            <div class="bg-gray-800 rounded-[2rem] p-8 shadow-2xl border border-white/5 flex flex-col h-[700px]">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-black text-green-400 italic uppercase flex items-center">
+                        <i class="fas fa-magic mr-3"></i> AI Optimized
+                    </h3>
+                    <button onclick="mockGithubPR()" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-black text-xs flex items-center shadow-lg shadow-indigo-500/20 transition-all transform active:scale-95">
+                        <i class="fab fa-github mr-2"></i> CREATE PR
+                    </button>
+                </div>
+                <div id="rewrittenCode" class="flex-grow bg-gray-950 rounded-2xl p-6 overflow-auto text-xs font-mono border border-white/5 leading-relaxed">
+                </div>
+            </div>
         </div>
-        <div id="rewrittenCode" class="flex-grow bg-gray-950 rounded-2xl p-6 overflow-auto text-xs font-mono border border-white/5 leading-relaxed">
-            </div>
     </div>
-</div>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="fixed inset-0 bg-black bg-opacity-75 items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-purple-500 mx-auto mb-4"></div>
+            <p class="text-white text-lg">Analyzing your code...</p>
+        </div>
     </div>
 
     <div id="prPopup" class="fixed bottom-12 right-12 bg-gray-800 border-l-8 border-indigo-500 p-8 rounded-2xl shadow-2xl translate-y-60 transition-transform duration-500 z-50 flex items-center space-x-6">
@@ -166,36 +174,75 @@
             icon.classList.toggle('fa-sun');
         }
 
+        // FIXED: Now calls the actual API instead of hardcoded results
         async function reviewCode() {
-            const code = document.getElementById('codeInput').value;
-            if (!code) return alert("Paste code first");
+            const code = document.getElementById('codeInput').value.trim();
+            const language = document.getElementById('language').value;
             
+            if (!code) {
+                alert("Paste code first");
+                return;
+            }
+            
+            // Show terminal animation
             const terminal = document.getElementById('terminal');
             const body = document.getElementById('terminalBody');
             terminal.classList.remove('hidden');
             body.innerHTML = "";
-            const logs = ["> Init Llama 3.3...", "> AST Analysis...", "> Vulnerability Scan...", "> Done."];
+            const logs = ["> Init Llama 3.3...", "> AST Analysis...", "> Vulnerability Scan...", "> Processing..."];
             for (const log of logs) {
                 body.innerHTML += `<p>${log}</p>`;
-                await new Promise(r => setTimeout(r, 600));
+                await new Promise(r => setTimeout(r, 400));
             }
 
-            // Organization Logic: Formatting the Review
-            const container = document.getElementById('reviewContent');
-            container.innerHTML = `
-                <div class="issue-card">
-                    <p class="issue-title">🔴 SQL Injection Risk</p>
-                    <p class="issue-line">Line: 12</p>
-                    <p><strong>Issue:</strong> User input is directly interpolated into a query string, allowing for command injection.</p>
-                </div>
-                <div class="issue-card">
-                    <p class="issue-title" style="color:#fb923c">🟠 Performance Bottleneck</p>
-                    <p class="issue-line">Line: 18</p>
-                    <p><strong>Issue:</strong> Using string concatenation inside a loop leads to excessive memory allocations.</p>
-                </div>
-            `;
-            document.getElementById('criticalCount').innerText = "1";
-            document.getElementById('highCount').innerText = "1";
+            // Show loading overlay
+            document.getElementById('loading').classList.add('active');
+            
+            try {
+                // Call the actual FastAPI backend
+                const response = await fetch('http://127.0.0.1:8000/api/review', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        language: language,
+                        focus_areas: ["Bugs", "Security", "Performance", "Best Practices"]
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+                
+                const data = await response.json();
+                
+                // Update counts with real data
+                document.getElementById('criticalCount').textContent = data.critical_count;
+                document.getElementById('highCount').textContent = data.high_count;
+                document.getElementById('mediumCount').textContent = data.medium_count;
+                document.getElementById('lowCount').textContent = data.low_count;
+                
+                // Render review with markdown
+                const reviewHtml = marked.parse(data.review);
+                document.getElementById('reviewContent').innerHTML = reviewHtml;
+                
+                // Apply syntax highlighting
+                document.querySelectorAll('#reviewContent pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+                
+                // Update terminal
+                body.innerHTML += `<p>> Done. Found ${data.critical_count + data.high_count + data.medium_count + data.low_count} issues.</p>`;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to review code. Make sure the backend is running on http://127.0.0.1:8000');
+                body.innerHTML += `<p class="text-red-500">> ERROR: ${error.message}</p>`;
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
         }
 
         function switchTab(tab) {
@@ -209,22 +256,72 @@
             const diff = Diff.diffLines(oldCode, newCode);
             const originalDiv = document.getElementById('originalCode');
             const rewrittenDiv = document.getElementById('rewrittenCode');
-            originalDiv.innerHTML = ""; rewrittenDiv.innerHTML = "";
+            originalDiv.innerHTML = ""; 
+            rewrittenDiv.innerHTML = "";
+            
             diff.forEach(part => {
                 const colorClass = part.added ? 'diff-added' : part.removed ? 'diff-removed' : '';
                 const line = `<div class="${colorClass} px-2 whitespace-pre">${escapeHtml(part.value)}</div>`;
                 if (part.added) rewrittenDiv.innerHTML += line;
                 else if (part.removed) originalDiv.innerHTML += line;
-                else { originalDiv.innerHTML += line; rewrittenDiv.innerHTML += line; }
+                else { 
+                    originalDiv.innerHTML += line; 
+                    rewrittenDiv.innerHTML += line; 
+                }
             });
+            
+            // Apply syntax highlighting
             hljs.highlightAll();
         }
 
+        // FIXED: Now calls the actual API instead of mock replacements
         async function rewriteCode() {
-            const code = document.getElementById('codeInput').value;
-            const fixed = code.replace("'", "@username").replace("+=", "builder.Append");
-            renderDiff(code, fixed);
-            switchTab('rewrite');
+            const code = document.getElementById('codeInput').value.trim();
+            const language = document.getElementById('language').value;
+            
+            if (!code) {
+                alert("Paste code first");
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loading').classList.add('active');
+            
+            try {
+                // Call the actual FastAPI backend
+                const response = await fetch('http://127.0.0.1:8000/api/rewrite', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        language: language
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+                
+                const data = await response.json();
+                
+                // Extract the rewritten code from markdown
+                const codeMatch = data.rewritten_code.match(/```[\w]*\n([\s\S]*?)```/);
+                const rewrittenCode = codeMatch ? codeMatch[1].trim() : data.rewritten_code;
+                
+                // Show diff comparison
+                renderDiff(code, rewrittenCode);
+                
+                // Switch to rewrite tab
+                switchTab('rewrite');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to rewrite code. Make sure the backend is running on http://127.0.0.1:8000');
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
         }
 
         function mockGithubPR() {
